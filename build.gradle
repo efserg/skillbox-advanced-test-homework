@@ -1,0 +1,22 @@
+plugins {
+    id 'application'
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.28'
+    annotationProcessor 'org.projectlombok:lombok:1.18.28'
+}
+
+application {
+    mainClass = 'com.skillbox.Main'
+}
+
+test {
+    useJUnitPlatform()
+}
+
