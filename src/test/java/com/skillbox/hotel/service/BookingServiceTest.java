@@ -4,6 +4,7 @@ package com.skillbox.hotel.service;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -163,5 +164,29 @@ public class BookingServiceTest {
                 )
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Недопустимые параметры");
+    }
+
+    @Test
+    void createBooking_ShouldFail_WhenRoomAlreadyBookedAndNotCanceled() {
+        // Arrange
+        Long roomId = 101L;
+        Room mockRoom = new Room(roomId, "Standard", 100.0, true);
+        when(roomService.findRoomById(roomId)).thenReturn(Optional.of(mockRoom));
+
+        // Первое бронирование
+        bookingService.createBooking(1L, roomId, 123L, LocalDate.of(2023, 10, 1), LocalDate.of(2023, 10, 5));
+
+        // Второе бронирование: комната уже недоступна
+        when(roomService.findRoomById(roomId)).thenReturn(Optional.of(new Room(roomId, "Standard", 100.0, false)));
+
+        // Act & Assert
+        Assertions.assertThatThrownBy(() ->
+                        bookingService.createBooking(2L, roomId, 456L, LocalDate.of(2023, 10, 6), LocalDate.of(2023, 10, 10))
+                )
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("недоступен");
+
+        verify(roomService, times(1)).updateRoomAvailability(roomId, false);
+        verify(notificationService, times(1)).sendNotification(anyLong(), anyString());
     }
 }
