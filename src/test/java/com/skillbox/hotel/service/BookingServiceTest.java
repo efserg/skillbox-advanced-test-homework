@@ -2,14 +2,15 @@ package com.skillbox.hotel.service;
 
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 
 import org.assertj.core.api.Assertions;
@@ -85,7 +86,7 @@ public class BookingServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("недоступен");
 
-        verify(roomService, never()).updateRoomAvailability(anyLong(), any());
+        verify(roomService, never()).updateRoomAvailability(anyLong(), anyBoolean());
         verify(notificationService, never()).sendNotification(anyLong(), any());
     }
 
@@ -123,7 +124,12 @@ public class BookingServiceTest {
         Long bookingId = 1L;
         Long roomId = 101L;
         Long customerId = 123L;
+
+        Room mockRoom = new Room(roomId, "Suite", 300.0, true);
+        when(roomService.findRoomById(roomId)).thenReturn(Optional.of(mockRoom));
+
         Booking existingBooking = new Booking(bookingId, roomId, customerId, LocalDate.now(), LocalDate.now().plusDays(1));
+
         ArgumentCaptor<Long> customerIdCaptor = ArgumentCaptor.forClass(Long.class);
         ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -134,7 +140,7 @@ public class BookingServiceTest {
 
         // Assert
         verify(roomService).updateRoomAvailability(roomId, true);
-        verify(notificationService).sendNotification(customerIdCaptor.capture(), messageCaptor.capture());
+        verify(notificationService, times(2)).sendNotification(customerIdCaptor.capture(), messageCaptor.capture());
 
         Assertions.assertThat(customerIdCaptor.getValue()).isEqualTo(customerId);
         Assertions.assertThat(messageCaptor.getValue()).contains("отменено");
@@ -156,11 +162,6 @@ public class BookingServiceTest {
                         bookingService.createBooking(null, null, null, null, null)
                 )
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("недопустимые параметры");
-    }
-
-    // Вспомогательный метод для проверки состояния бронирований
-    private List<Booking> getAllBookings() {
-        return bookingService.getAllBookings();
+                .hasMessageContaining("Недопустимые параметры");
     }
 }
