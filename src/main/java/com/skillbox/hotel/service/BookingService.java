@@ -43,7 +43,7 @@ public class BookingService {
         if (bookingId == null || roomId == null || customerId == null || startDate == null || endDate == null) {
             throw new IllegalArgumentException("Недопустимые параметры бронирования");
         }
-        if (startDate.isBefore(endDate)) {
+        if (startDate.isAfter(endDate)) {
             throw new IllegalArgumentException("Дата начала бронирования должна быть раньше даты окончания");
         }
 
