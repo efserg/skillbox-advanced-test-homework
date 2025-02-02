@@ -4,6 +4,7 @@ package com.skillbox.hotel.service;
 import com.skillbox.hotel.model.Room;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -21,6 +22,9 @@ public class RoomService {
      * @param room Экземпляр {@link Room}, представляющий добавляемый номер.
      */
     public void addRoom(Room room) {
+        if (room == null) {
+            return;
+        }
         rooms.add(room);
     }
 
@@ -32,7 +36,7 @@ public class RoomService {
      */
     public List<Room> getAvailableRooms(Predicate<Room> filter) {
         return rooms.stream()
-                .filter(filter)
+                .filter(room -> filter != null && filter.test(room))
                 .collect(Collectors.toList());
     }
 
@@ -44,6 +48,7 @@ public class RoomService {
      */
     public Optional<Room> findRoomById(Long roomId) {
         return rooms.stream()
+                .filter(Objects::nonNull)
                 .filter(room -> room.getRoomId().equals(roomId))
                 .findFirst();
     }
