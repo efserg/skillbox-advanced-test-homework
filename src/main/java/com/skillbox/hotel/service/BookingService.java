@@ -75,4 +75,8 @@ public class BookingService {
                     throw new IllegalArgumentException("Бронирование с ID " + bookingId + " не найдено.");
                 });
     }
+
+    public List<Booking> getAllBookings() {
+        return List.copyOf(bookings);
+    }
 }
