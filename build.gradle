@@ -12,10 +12,6 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
 }
 
-application {
-    mainClass = 'com.skillbox.Main'
-}
-
 test {
     useJUnitPlatform()
 }
