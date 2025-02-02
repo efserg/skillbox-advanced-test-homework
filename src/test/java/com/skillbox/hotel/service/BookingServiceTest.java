@@ -1,45 +1,37 @@
 package com.skillbox.hotel.service;
 
 
-import com.skillbox.hotel.model.Booking;
-import com.skillbox.hotel.model.Room;
-import com.skillbox.hotel.service.external.NotificationService;
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import com.skillbox.hotel.model.Booking;
+import com.skillbox.hotel.model.Room;
+import com.skillbox.hotel.service.external.NotificationService;
 
 public class BookingServiceTest {
 
-    @Mock
     private RoomService roomService;
 
-    @Mock
     private NotificationService notificationService;
-
-    @Captor
-    private ArgumentCaptor<Long> customerIdCaptor;
-
-    @Captor
-    private ArgumentCaptor<String> messageCaptor;
 
     private BookingService bookingService;
 
     @BeforeEach
     void setUp() {
+        roomService = mock(RoomService.class);
+        notificationService = mock(NotificationService.class);
         bookingService = new BookingService(roomService, notificationService);
     }
 
@@ -52,6 +44,8 @@ public class BookingServiceTest {
         LocalDate startDate = LocalDate.now().plusDays(1);
         LocalDate endDate = startDate.plusDays(3);
         Room mockRoom = new Room(roomId, "Standard", 100.0, true);
+        ArgumentCaptor<Long> customerIdCaptor = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
 
         when(roomService.findRoomById(roomId)).thenReturn(Optional.of(mockRoom));
 
@@ -130,6 +124,9 @@ public class BookingServiceTest {
         Long roomId = 101L;
         Long customerId = 123L;
         Booking existingBooking = new Booking(bookingId, roomId, customerId, LocalDate.now(), LocalDate.now().plusDays(1));
+        ArgumentCaptor<Long> customerIdCaptor = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
+
         bookingService.createBooking(bookingId, roomId, customerId, existingBooking.getStartDate(), existingBooking.getEndDate());
 
         // Act
