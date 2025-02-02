@@ -40,15 +40,16 @@ public class BookingService {
     public Booking createBooking(Long bookingId, Long roomId,
                                  Long customerId, LocalDate startDate,
                                  LocalDate endDate) {
+        if (bookingId == null || roomId == null || customerId == null || startDate == null || endDate == null) {
+            throw new IllegalArgumentException("Недопустимые параметры бронирования");
+        }
+        if (startDate.isBefore(endDate)) {
+            throw new IllegalArgumentException("Дата начала бронирования должна быть раньше даты окончания");
+        }
+
         return roomService.findRoomById(roomId)
                 .filter(Room::isAvailable)
                 .map(room -> {
-                    if (bookingId == null || roomId == null || customerId == null || startDate == null || endDate == null) {
-                        throw new IllegalArgumentException("Недопустимые параметры бронирования");
-                    }
-                    if (startDate.isBefore(endDate)) {
-                        throw new IllegalArgumentException("Дата начала бронирования должна быть раньше даты окончания");
-                    }
                     Booking booking = new Booking(bookingId, roomId, customerId, startDate, endDate);
                     bookings.add(booking);
                     roomService.updateRoomAvailability(roomId, false);
