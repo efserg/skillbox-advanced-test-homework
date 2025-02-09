@@ -1,15 +1,20 @@
 package com.skillbox.hotel.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.skillbox.hotel.model.Room;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 class RoomServiceTest {
 
@@ -116,7 +121,7 @@ class RoomServiceTest {
 
         // Assert
         // Проверяем, что попытка модификации вызывает исключение
-        Assertions.assertThatThrownBy(() -> result.add(new Room(2L, "Deluxe", 200.0, false)))
+        assertThatThrownBy(() -> result.add(new Room(2L, "Deluxe", 200.0, false)))
                 .isInstanceOf(UnsupportedOperationException.class);
 
         // Дополнительная проверка, что исходная коллекция не изменилась
@@ -161,5 +166,92 @@ class RoomServiceTest {
         assertThat(roomService.getAllRooms()).isEmpty();
         assertThat(roomService.getAvailableRooms(r -> true)).isEmpty();
         assertThat(roomService.findRoomById(1L)).isEmpty();
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideRoomsForAddTest")
+    void addRoom_ShouldCorrectlyAddOrIgnoreNull(Room room, int expectedChange) {
+        roomService.addRoom(room);
+        assertThat(roomService.getAllRooms()).hasSize(expectedChange);
+    }
+
+    private static Stream<Arguments> provideRoomsForAddTest() {
+        return Stream.of(
+                Arguments.of(new Room(4L, "Deluxe", 4, true), 1),
+                Arguments.of(null, 0)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideFiltersForAvailabilityTest")
+    void getAvailableRooms_ShouldFilterCorrectly(Predicate<Room> filter, int expectedCount) {
+        roomService.addRoom(new Room(1L, "Standard", 1, true));
+        roomService.addRoom(new Room(2L, "Suite", 2, false));
+        roomService.addRoom(new Room(3L, "Single", 3, true));
+        assertThat(roomService.getAvailableRooms(filter)).hasSize(expectedCount);
+    }
+
+    private static Stream<Arguments> provideFiltersForAvailabilityTest() {
+        final Predicate<Room> predicate1 = room -> "Suite".equals(room.getType());
+        return Stream.of(
+                Arguments.of((Predicate<Room>) Room::isAvailable, 2),
+                Arguments.of((Predicate<Room>) room -> "Suite".equals(room.getType()), 1),
+                Arguments.of(null, 0)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideRoomIdsForSearchTest")
+    void findRoomById_ShouldReturnCorrectResult(Long roomId, boolean expectedFound) {
+        roomService.addRoom(new Room(1L, "Standard", 1, true));
+        roomService.addRoom(new Room(2L, "Suite", 2, false));
+        roomService.addRoom(new Room(3L, "Single", 3, true));
+        Optional<Room> room = roomService.findRoomById(roomId);
+        if (expectedFound) {
+            assertThat(room).isPresent();
+        } else {
+            assertThat(room).isNotPresent();
+        }
+    }
+
+    private static Stream<Arguments> provideRoomIdsForSearchTest() {
+        return Stream.of(
+                Arguments.of(1L, true),
+                Arguments.of(4L, false),
+                Arguments.of(null, false)
+        );
+    }
+
+    // Тестирование обновления доступности
+    @ParameterizedTest
+    @MethodSource("provideAvailabilityUpdatesTest")
+    void updateRoomAvailability_ShouldUpdateIfExists(Long roomId, boolean newAvailability, boolean shouldUpdate) {
+        roomService.addRoom(new Room(1L, "Standard", 1, true));
+        roomService.addRoom(new Room(2L, "Suite", 2, false));
+        roomService.addRoom(new Room(3L, "Single", 3, true));
+
+        roomService.updateRoomAvailability(roomId, newAvailability);
+        Optional<Room> room = roomService.findRoomById(roomId);
+        if (shouldUpdate) {
+            assertThat(room).isPresent().hasValueSatisfying(r -> assertThat(r.isAvailable()).isEqualTo(newAvailability));
+        } else {
+            assertThat(room).isNotPresent();
+        }
+    }
+
+    private static Stream<Arguments> provideAvailabilityUpdatesTest() {
+        return Stream.of(
+                Arguments.of(1L, false, true),
+                Arguments.of(2L, true, true),
+                Arguments.of(4L, true, false)
+        );
+    }
+
+    // Тестирование получения неизменяемого списка
+    @Test
+    void getAllRooms_ShouldReturnImmutableList() {
+        List<Room> rooms = roomService.getAllRooms();
+        assertThatThrownBy(() -> rooms.add(new Room(5L, "Test", 2, false)))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 }
