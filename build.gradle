@@ -26,6 +26,6 @@ test {
     useJUnitPlatform()
 }
 
-//jacoco {
-//    toolVersion = "0.8.11"
-//}
+jacoco {
+    toolVersion = "0.8.11"
+}
